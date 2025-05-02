@@ -3,7 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package autonoma.pulgas.models;
-
+/**
+ *
+ * @author Salo
+ */
 import java.awt.Image;
 
 public class PulgaMutante extends Pulga {
@@ -20,4 +23,8 @@ public class PulgaMutante extends Pulga {
             campo.incrementarPuntaje();
       }
    }
+
+    int getY() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }
