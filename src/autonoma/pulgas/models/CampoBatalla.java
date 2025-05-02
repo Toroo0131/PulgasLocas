@@ -6,8 +6,15 @@ package autonoma.pulgas.models;
 
 /**
  *
- * @author Estudiante
+ * @author SaloT
  */
+
+import autonoma.pulgas.utils.GestorImagenes;
+import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,9 +24,9 @@ public class CampoBatalla {
     private List<Pulga> pulgas;
     private int ancho, alto;
     private int puntaje;
-    private GestorImagenes gestorImagenes;
+    private autonoma.pulgas.utils.GestorImagenes gestorImagenes;
 
-    public CampoBatalla(int ancho, int alto, GestorImagenes gestorImagenes) {
+    public CampoBatalla(int ancho, int alto, autonoma.pulgas.utils.GestorImagenes gestorImagenes) {
         this.ancho = ancho;
         this.alto = alto;
         this.pulgas = new ArrayList<>();

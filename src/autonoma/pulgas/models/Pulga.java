@@ -48,5 +48,9 @@ public abstract class Pulga {
     }
 
     public int getX() { return x; }
+
+    int getY() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
     
 }

@@ -4,10 +4,20 @@
  */
 package autonoma.pulgas.models;
 
+import java.awt.Image;
+
 /**
  *
  * @author Salo
  */
 class GestorImagenes {
+
+    Image getImagenMutante() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    Image getImagenNormal() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
     
 }
