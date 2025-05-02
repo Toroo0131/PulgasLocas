@@ -4,10 +4,17 @@
  */
 package autonoma.pulgas.models;
 
-/**
- *
- * @author Estudiante
- */
-public class PulgaNormal {
-    
+
+import java.awt.Image;
+
+public class PulgaNormal extends Pulga {
+    public PulgaNormal(int x, int y, Image imagen) {
+        super(x, y, 1, imagen);
+    }
+
+    @Override
+    public void recibirImpacto(CampoBatalla campo) {
+        this.vida = 0;
+        campo.incrementarPuntaje();
+   }
 }

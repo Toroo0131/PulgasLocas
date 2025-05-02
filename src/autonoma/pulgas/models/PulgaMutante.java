@@ -4,10 +4,20 @@
  */
 package autonoma.pulgas.models;
 
-/**
- *
- * @author Estudiante
- */
-public class PulgaMutante {
-    
+import java.awt.Image;
+
+public class PulgaMutante extends Pulga {
+    public PulgaMutante(int x, int y, Image imagen) {
+        super(x, y, 2, imagen);
+    }
+
+    @Override
+    public void recibirImpacto(CampoBatalla campo) {
+        this.vida--;
+        if (vida == 1) {
+            campo.convertirEnPulgaNormal(this);
+        } else if (vida <= 0) {
+            campo.incrementarPuntaje();
+      }
+   }
 }
