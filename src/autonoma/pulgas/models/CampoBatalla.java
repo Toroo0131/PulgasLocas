@@ -1,32 +1,20 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package autonoma.pulgas.models;
-
-/**
- *
- * @author SaloT
- */
 
 import autonoma.pulgas.utils.GestorImagenes;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import java.awt.Graphics;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Random;
 
 public class CampoBatalla {
     private List<Pulga> pulgas;
-    private int ancho, alto;
+    private final int ancho;
+    private final int alto;
     private int puntaje;
-    private autonoma.pulgas.utils.GestorImagenes gestorImagenes;
+    private final GestorImagenes gestorImagenes;
 
-    public CampoBatalla(int ancho, int alto, autonoma.pulgas.utils.GestorImagenes gestorImagenes) {
+    public CampoBatalla(int ancho, int alto, GestorImagenes gestorImagenes) {
         this.ancho = ancho;
         this.alto = alto;
         this.pulgas = new ArrayList<>();
@@ -36,32 +24,43 @@ public class CampoBatalla {
 
     public void agregarPulgaNormal() {
         Pulga nueva = crearPulgaSinColision(false);
-        if (nueva != null) pulgas.add(nueva);
+        if (nueva != null) {
+            pulgas.add(nueva);
+        }
     }
 
     public void agregarPulgaMutante() {
         Pulga nueva = crearPulgaSinColision(true);
-        if (nueva != null) pulgas.add(nueva);
+        if (nueva != null) {
+            pulgas.add(nueva);
+        }
     }
 
     private Pulga crearPulgaSinColision(boolean mutante) {
+        Random rand = new Random();
         for (int intentos = 0; intentos < 20; intentos++) {
-            int x = (int) (Math.random() * (ancho - 40));
-            int y = (int) (Math.random() * (alto - 40));
+            int x = rand.nextInt(ancho - Pulga.ANCHO);
+            int y = rand.nextInt(alto - Pulga.ALTO);
+            
             Pulga p = mutante
-                ? new PulgaMutante(x, y, gestorImagenes.getImagenMutante())
-                : new PulgaNormal(x, y, gestorImagenes.getImagenNormal());
+                ? new PulgaMutante(x, y, gestorImagenes.getImagenMutante(), ancho, alto)
+                : new PulgaNormal(x, y, gestorImagenes.getImagenNormal(), ancho, alto);
 
-            boolean colisiona = false;
-            for (Pulga otra : pulgas) {
-                if (Math.abs(p.getX() - otra.getX()) < 40 && Math.abs(p.getY() - otra.getY()) < 40) {
-                    colisiona = true;
-                    break;
-                }
+            if (!hayColision(p)) {
+                return p;
             }
-            if (!colisiona) return p;
         }
         return null;
+    }
+
+    private boolean hayColision(Pulga nuevaPulga) {
+        for (Pulga otra : pulgas) {
+            if (Math.abs(nuevaPulga.getX() - otra.getX()) < Pulga.ANCHO && 
+                Math.abs(nuevaPulga.getY() - otra.getY()) < Pulga.ALTO) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void saltarPulgas() {
@@ -72,10 +71,10 @@ public class CampoBatalla {
 
     public void lanzarMisil() {
         int cantidad = pulgas.size() / 2;
-    for (int i = 0; i < cantidad && !pulgas.isEmpty(); i++) {
-        pulgas.remove(0);
-        puntaje++;
-    }
+        for (int i = 0; i < cantidad && !pulgas.isEmpty(); i++) {
+            pulgas.remove(0);
+            puntaje++;
+        }
     }
 
     public void impactarEn(int x, int y) {
@@ -84,7 +83,10 @@ public class CampoBatalla {
             Pulga p = it.next();
             if (p.contiene(x, y)) {
                 p.recibirImpacto(this);
-                if (!p.estaViva()) it.remove();
+                if (!p.estaViva()) {
+                    it.remove();
+                    incrementarPuntaje();
+                }
                 break;
             }
         }
@@ -94,7 +96,7 @@ public class CampoBatalla {
         int x = mutante.getX();
         int y = mutante.getY();
         pulgas.remove(mutante);
-        pulgas.add(new PulgaNormal(x, y, gestorImagenes.getImagenNormal()));
+        pulgas.add(new PulgaNormal(x, y, gestorImagenes.getImagenNormal(), ancho, alto));
     }
 
     public void dibujar(Graphics g) {
@@ -112,6 +114,24 @@ public class CampoBatalla {
     }
 
     public boolean estaVacio() {
-        return pulgas.isEmpty();
+        return false;
+    }
+
+    public void actualizarPulgas() {
+        for (Pulga pulga : pulgas) {
+            pulga.mover();
+        }
+        
+        // Verificar si alguna pulga ha salido del campo
+        pulgas.removeIf(pulga -> !pulga.estaDentro(ancho, alto));
+    }
+
+    // Métodos auxiliares para obtener dimensiones si son necesarios en otras clases
+    public int getAncho() {
+        return ancho;
+    }
+
+    public int getAlto() {
+        return alto;
     }
 }

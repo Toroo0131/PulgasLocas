@@ -3,15 +3,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package autonoma.pulgas.models;
-/**
- *
- * @author Salo
- */
+
 import java.awt.Image;
 
 public class PulgaMutante extends Pulga {
-    public PulgaMutante(int x, int y, Image imagen) {
-        super(x, y, 2, imagen);
+    public PulgaMutante(int x, int y, Image imagen, int anchoCampo, int altoCampo) {
+        super(x, y, 2, imagen, anchoCampo, altoCampo);
     }
 
     @Override
@@ -21,10 +18,6 @@ public class PulgaMutante extends Pulga {
             campo.convertirEnPulgaNormal(this);
         } else if (vida <= 0) {
             campo.incrementarPuntaje();
-      }
-   }
-
-    int getY() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
     }
 }

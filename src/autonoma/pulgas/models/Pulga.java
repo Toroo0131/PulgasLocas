@@ -1,30 +1,31 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package autonoma.pulgas.models;
 
-/**
- *
- * @author Salo
- */
-import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Graphics;
 import java.util.Random;
 
 public abstract class Pulga {
     protected int x, y;
     protected int vida;
     protected Image imagen;
+    protected int velocidadX;
+    protected int velocidadY;
+    protected int anchoCampo;  // Nuevo campo para almacenar dimensiones del campo
+    protected int altoCampo;   // Nuevo campo para almacenar dimensiones del campo
 
     protected static final int ANCHO = 40;
     protected static final int ALTO = 40;
 
-    public Pulga(int x, int y, int vida, Image imagen) {
+    public Pulga(int x, int y, int vida, Image imagen, int anchoCampo, int altoCampo) {
         this.x = x;
         this.y = y;
         this.vida = vida;
         this.imagen = imagen;
+        this.anchoCampo = anchoCampo;
+        this.altoCampo = altoCampo;
+        Random rand = new Random();
+        this.velocidadX = rand.nextInt(5) + 1; // Velocidad aleatoria entre 1 y 5
+        this.velocidadY = rand.nextInt(5) + 1;
     }
 
     public void saltar(int anchoCampo, int altoCampo) {
@@ -49,8 +50,30 @@ public abstract class Pulga {
 
     public int getX() { return x; }
 
-    int getY() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public int getY() { return y; }
+
+    public void mover() {
+        // Actualizar posición
+        this.x += this.velocidadX;
+        this.y += this.velocidadY;
+        
+        // Rebote en bordes horizontales
+        if (this.x <= 0 || this.x >= anchoCampo - ANCHO) {
+            this.velocidadX *= -1;
+            // Asegurarse de que no se salga del campo
+            this.x = Math.max(0, Math.min(this.x, anchoCampo - ANCHO));
+        }
+        
+        // Rebote en bordes verticales
+        if (this.y <= 0 || this.y >= altoCampo - ALTO) {
+            this.velocidadY *= -1;
+            // Asegurarse de que no se salga del campo
+            this.y = Math.max(0, Math.min(this.y, altoCampo - ALTO));
+        }
     }
-    
+
+    public boolean estaDentro(int anchoCampo, int altoCampo) {
+        return this.x >= 0 && this.x <= anchoCampo - ANCHO && 
+               this.y >= 0 && this.y <= altoCampo - ALTO;
+    }
 }

@@ -1,9 +1,4 @@
-
 package autonoma.pulgas.views;
-/**
- *
- * @author SaloC
- */
 
 import autonoma.pulgas.models.*;
 import autonoma.pulgas.utils.GestorImagenes;
@@ -19,22 +14,22 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.awt.Graphics;
 
-
-public class SimuladorPulgas extends JPanel implements KeyListener, MouseListener {
+public class SimuladorPulgas extends JPanel implements KeyListener, MouseListener, Runnable {
     private CampoBatalla campo;
     private final GestorImagenes gestorImagenes;
     private JFrame ventana;
-    private Timer temporizador;
     private int record;
     private final String ARCHIVO_RECORD = "resources/puntaje.txt";
+    private volatile boolean running = true;
+    private HiloPulgaNormal hiloNormal;
+    private HiloPulgaMutante hiloMutante;
+    private Thread hiloPrincipal;
     
     public SimuladorPulgas() {
         this.setPreferredSize(new Dimension(800, 600));
@@ -49,9 +44,41 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
         cargarRecord();
 
         iniciarVentana();
-        iniciarTemporizador();
-        System.out.println("Panel listo para recibir teclas y clicks.");
+        iniciarHilos();
     }
+    
+    private void iniciarHilos() {
+        // Detener hilos anteriores si existen
+        detenerHilos();
+        
+        // Hilo principal de movimiento
+        hiloPrincipal = new Thread(this);
+        hiloPrincipal.start();
+        
+        // Hilos de generación de pulgas
+        hiloNormal = new HiloPulgaNormal(campo, this);
+        hiloMutante = new HiloPulgaMutante(campo, this);
+        
+        new Thread(hiloNormal).start();
+        new Thread(hiloMutante).start();
+    }
+    
+    private void detenerHilos() {
+        running = false;
+        
+        if (hiloNormal != null) {
+            hiloNormal.detener();
+        }
+        
+        if (hiloMutante != null) {
+            hiloMutante.detener();
+        }
+        
+        if (hiloPrincipal != null) {
+            hiloPrincipal.interrupt();
+        }
+    }
+    
     private void iniciarVentana() {
         ventana = new JFrame("Simulador AntiPulgas");
         ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -59,31 +86,6 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
         ventana.pack();
         ventana.setLocationRelativeTo(null);
         ventana.setVisible(true);
-    }
-
-    private void iniciarTemporizador() {
-        temporizador = new Timer();
-        temporizador.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                campo.agregarPulgaNormal();
-                repaint();
-            }
-        }, 0, 5000);
-
-        temporizador.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                campo.agregarPulgaMutante();
-                repaint();
-            }
-        }, 0, 10000);
-    }
-
-    private void detenerTemporizador() {
-        if (temporizador != null) {
-            temporizador.cancel();
-        }
     }
 
     @Override
@@ -97,7 +99,6 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
         g.drawString("Récord: " + record, 20, 50);
 
         if (campo.estaVacio()) {
-            detenerTemporizador();
             g.setFont(new Font("Arial", Font.BOLD, 28));
             g.setColor(Color.RED);
             g.drawString("¡Simulación finalizada!", 250, 300);
@@ -107,22 +108,31 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
 
     private void mostrarDialogoFinal() {
         SwingUtilities.invokeLater(() -> {
-            if (campo.getPuntaje() > record) {
-                guardarRecord(campo.getPuntaje());
-            }
-
+            actualizarRecord();
+            
             int opcion = JOptionPane.showConfirmDialog(this,
                     "¿Deseas reiniciar la partida?", "Fin del juego",
                     JOptionPane.YES_NO_OPTION);
 
             if (opcion == JOptionPane.YES_OPTION) {
-                campo = new CampoBatalla(800, 600, gestorImagenes);
-                iniciarTemporizador();
-                repaint();
+                reiniciarJuego();
             } else {
                 System.exit(0);
             }
         });
+    }
+    
+    private void reiniciarJuego() {
+        campo = new CampoBatalla(800, 600, gestorImagenes);
+        running = true;
+        iniciarHilos();
+        repaint();
+    }
+    
+    private void actualizarRecord() {
+        if (campo.getPuntaje() > record) {
+            guardarRecord(campo.getPuntaje());
+        }
     }
 
     private void cargarRecord() {
@@ -142,6 +152,27 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
         }
     }
     
+    @Override
+    public void run() {
+        while (running) {
+            campo.actualizarPulgas();
+            
+            // Verificar y actualizar record continuamente
+            if (campo.getPuntaje() > record) {
+                guardarRecord(campo.getPuntaje());
+            }
+            
+            repaint();
+            
+            try {
+                Thread.sleep(50); // Tiempo de actualización más rápido para mejor respuesta
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -165,7 +196,6 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
     @Override
     public void keyPressed(KeyEvent e) {
         switch (e.getKeyChar()) {
-            
             case 'p':
                 campo.agregarPulgaNormal();
                 break;
@@ -176,16 +206,20 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
                 campo.saltarPulgas();
                 break;
             case 'q':
-                detenerTemporizador();
                 mostrarDialogoFinal();
                 break;
+            case 'x':
+                campo.lanzarMisil();
+                if (campo.getPuntaje() > record) {
+                    guardarRecord(campo.getPuntaje());
+                }
             default:
                 break;
         }
         repaint();
-    
     }
 
+    
     @Override
     public void keyReleased(KeyEvent e) {
     }
@@ -193,9 +227,9 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
     @Override
     public void mouseClicked(MouseEvent e) {
         if (SwingUtilities.isLeftMouseButton(e)) {
-        campo.impactarEn(e.getX(), e.getY());
-        repaint();
-    }
+            campo.impactarEn(e.getX(), e.getY());
+            repaint();
+        }
     }
 
     @Override
@@ -212,13 +246,15 @@ public class SimuladorPulgas extends JPanel implements KeyListener, MouseListene
 
     @Override
     public void mouseExited(MouseEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet."); 
     }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(SimuladorPulgas::new);
     }
+}
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
-}
+
